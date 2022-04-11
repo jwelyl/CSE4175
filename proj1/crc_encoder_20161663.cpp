@@ -11,13 +11,19 @@
 #include <deque>
 using namespace std;
 
+FILE* fp_in = NULL;       //  입력 파일 포인터
+FILE* fp_out = NULL;      //  출력 파일 포인터
 int dataword_size = 0;    //  하나의 dataword 크기(bit 수), 4 또는 8
 
 string generator;         //  generator
 int generator_size = 0;   //  generator(divisor)의 크기(bit 수)
 
 int n_dataword = 0;       //  1byte(8-bit) data의 dataword 개수(2 또는 1)
-char padding_size = 0;    //  output_file에 추가될 padding bit 개수  
+
+int len_8 = 0;            //  codeword에 padding 0까지 추가한 길이(8의 배수)
+char padding_size = 0;    //  output_file에 추가될 padding bit 개수(0~7) 
+
+string codewords = "";  //  모든 dataword를 codeword로 변환 후 쭉 나열한 것
 
 void err_exit(const char* err_msg) {
   fprintf(stderr, "%s", err_msg);
@@ -27,15 +33,18 @@ void err_exit(const char* err_msg) {
 //  calculate and return CRC remainder
 string crc_remainder(string dataword);
 
+//  write output_file
+void write_output_file();
+
 int main(int argc, char* argv[]) {
   if(argc != 5) 
     err_exit("usage: ./crc_encoder input_file output_file generator dataword_size\n");
 
-  FILE* fp_in = fopen(argv[1], "r");
+  fp_in = fopen(argv[1], "r");
   if(!fp_in)
     err_exit("input file open error.\n");
 
-  FILE* fp_out = fopen(argv[2], "w");
+  fp_out = fopen(argv[2], "w");
   if(!fp_out)
     err_exit("output file open error.\n");
 
@@ -56,45 +65,83 @@ int main(int argc, char* argv[]) {
 
 
   ///
-  cout << "generator = " << generator << "\n";
-  cout << "generator size = " << generator_size << "\n";
+  ///cout << "generator = " << generator << "\n";
+  ///cout << "generator size = " << generator_size << "\n";
   ///
 
   if(dataword_size != 4 && dataword_size != 8)
     err_exit("dataword size must be 4 or 8.\n");
 
-  int cnt = 0;
+  ///
+ /// int cnt = 0;
+  ///
+
   //  입력 파일을 끝까지 1byte 단위로 읽음.
   do {
     char ch;  //  읽어온 1byte data
     
     if(fscanf(fp_in, "%c", &ch) == EOF) break;
     
-    printf("cnt : %d\n", ++cnt);
     ///
-    printf("%c", ch);
+  ///  printf("cnt : %d\n", ++cnt);
     ///
-    bitset<8> ch_bit(ch);
-    string ch_str = ch_bit.to_string();
+ ///   printf("%c", ch);
+    ///
+    bitset<8> ch_bit(ch); //  읽어온 1byte를 8bits bitset으로 변환
+    string ch_str = ch_bit.to_string(); //  8bits bitset을 문자열로 표현
 
     ///
-    cout << "\nch_bit : " << ch_bit << "\n";
-    cout << "(char)ch_bit.to_ulong() : " << (char)ch_bit.to_ulong() << "\n";
-    cout << "ch_str : " << ch_str << "\n";
+  //  cout << "\nch_bit : " << ch_bit << "\n";
+  //  cout << "(char)ch_bit.to_ulong() : " << (char)ch_bit.to_ulong() << "\n";
+  //  cout << "ch_str : " << ch_str << "\n";
     ///
 
+    //  dataword_size만큼 1byte data에서 잘라냄
     for(int i = 0; i < n_dataword; i++) {
-      string d_str = ch_str.substr(4 * i, dataword_size); //  dataword string
-      string c_str = d_str; //  codeword string
+      string data_str = ch_str.substr(4 * i, dataword_size); //  dataword string
+      string code_str = data_str; //  codeword string
       
-      //
-      cout << "d_str : " << d_str << "\n";  
-      //
+      ///
+   //   cout << "data_str : " << data_str << "\n";  
+      ///
       
-      c_str += crc_remainder(d_str);
-      cout << "c_str : " << c_str << "\n";
+      code_str += crc_remainder(data_str);
+
+      ///
+  //    cout << "code_str : " << code_str << "\n";
+      ///
+
+      codewords += code_str;
     } 
   } while(true);
+
+  ///
+  ///cout << "전체 codewords : " << codewords << "\n";
+  ///cout << "전체 codewords 길이 : " << codewords.size() << "\n";
+  ///
+  len_8 = codewords.size() + (8 - codewords.size() % 8);
+
+  if(len_8 % 8 != 0) {
+    cout << "wrong padding 0's\n";
+    exit(-1);
+  }
+  padding_size = len_8 - codewords.size();
+
+  ///
+//  printf("padding_size = %d, %c\n", padding_size, padding_size);
+  ///
+
+  codewords = string(padding_size, '0') + codewords;
+  
+  ///
+//  cout << "최종 codewords : " << codewords << "\n";
+//  cout << "최종 codewords 길이 : " << codewords.size() << "\n";
+  ///
+
+  write_output_file();
+
+  fclose(fp_in);
+  fclose(fp_out);
 
   return 0;
 }
@@ -106,10 +153,10 @@ string crc_remainder(string dataword) {
   for(int i = 0; i < dataword.size(); i++)
     dividend.push_back(dataword[i]);
 
-  for(int i = 0; i < generator.size() - 1; i++)
+  for(int i = 0; i < generator_size - 1; i++)
     dividend.push_back('0');
 
-  while(dividend.size() >= generator.size()) {
+  while(dividend.size() >= generator_size) {
     string tmp = generator; //  몫
 
     if(dividend[0] == '0') {  //  몫이 0일 경우
@@ -133,4 +180,24 @@ string crc_remainder(string dataword) {
   return remainder;
 }
 
+void write_output_file() {
+  ///
+ /// cout << "In write_output_file func\n";
+ /// cout << "codewords : " << codewords << "(" << codewords.size() <<")\n";
+///
+  int n_bytes = codewords.size() / 8; 
+  fprintf(fp_out, "%c", padding_size);
+
+  for(int i = 0; i < n_bytes; i++) {
+    bitset<8> b(0);
+
+    for(int j = 0; j < 8; j++)
+      b[7 - j] = codewords[i * 8 + j] - '0';
+
+    ///
+    ///cout << "byte : " << b << "\n";
+    ///
+    fprintf(fp_out, "%c", (char)b.to_ulong());
+  }
+}
 

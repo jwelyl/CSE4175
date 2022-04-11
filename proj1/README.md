@@ -12,7 +12,7 @@ g++ -g -o crc_encoder_20161663 crc_encoder_20161663.cpp && g++ -g -o crc_decoder
 
 ## 2-1. example
 '''
-./crc_encoder_20161663 datastream.tx codestream.tx 1101 4
+./crc_encoder_20161663 datastream.tx codedstream.tx 1101 4
 ./linksim codedstream.tx codedstream.rx 0.0 1001
 ./crc_decoder_20161663 codedstream.rx datastream.rx result.txt 1101 4
 '''

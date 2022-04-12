@@ -21,10 +21,8 @@ char padding_size = 0;    //  output_file에 추가될 padding bit 개수(0~7)
 
 string codewords = "";  //  모든 dataword를 codeword로 변환 후 쭉 나열한 것
 
-void err_exit(const char* err_msg) {
-  fprintf(stderr, "%s", err_msg);
-  exit(-1);
-} 
+//  print error message and terminate program
+void err_exit(const char* err_msg); 
 
 //  calculate and return CRC remainder
 string crc_remainder(string dataword);
@@ -96,6 +94,11 @@ int main(int argc, char* argv[]) {
 
   return 0;
 }
+
+void err_exit(const char* err_msg) {
+  fprintf(stderr, "%s", err_msg);
+  exit(-1);
+} 
 
 string crc_remainder(string dataword) {
   deque<char> dividend; //  CRC 나눗셈의 피제수(dataword + ('generator 길이 - 1'개의 0)), O(1)에 앞에서 뺄 수 있도록 deque로 정의

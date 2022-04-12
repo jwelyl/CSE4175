@@ -9,9 +9,8 @@ int main(void) {
 
   while(fscanf(fp, "%c", &ch) != EOF) {
     bitset<8> b(ch);
-    cout << b << "\n\n";
+    cout << b << " (" << (int)b.to_ulong() << ")\n";
   }
-  cout << "\n";
 
   return 0;
 }

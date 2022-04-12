@@ -1,9 +1,5 @@
 #include <cstdio>
-
-//
 #include <iostream>
-//
-
 #include <bitset>
 #include <cstdlib>
 #include <string>
@@ -63,62 +59,27 @@ int main(int argc, char* argv[]) {
     exit(-1);
   }
 
-
-  ///
-  ///cout << "generator = " << generator << "\n";
-  ///cout << "generator size = " << generator_size << "\n";
-  ///
-
   if(dataword_size != 4 && dataword_size != 8)
     err_exit("dataword size must be 4 or 8.\n");
-
-  ///
- /// int cnt = 0;
-  ///
-
+  
   //  입력 파일을 끝까지 1byte 단위로 읽음.
   do {
     char ch;  //  읽어온 1byte data
     
     if(fscanf(fp_in, "%c", &ch) == EOF) break;
     
-    ///
-  ///  printf("cnt : %d\n", ++cnt);
-    ///
- ///   printf("%c", ch);
-    ///
     bitset<8> ch_bit(ch); //  읽어온 1byte를 8bits bitset으로 변환
     string ch_str = ch_bit.to_string(); //  8bits bitset을 문자열로 표현
-
-    ///
-  //  cout << "\nch_bit : " << ch_bit << "\n";
-  //  cout << "(char)ch_bit.to_ulong() : " << (char)ch_bit.to_ulong() << "\n";
-  //  cout << "ch_str : " << ch_str << "\n";
-    ///
 
     //  dataword_size만큼 1byte data에서 잘라냄
     for(int i = 0; i < n_dataword; i++) {
       string data_str = ch_str.substr(4 * i, dataword_size); //  dataword string
       string code_str = data_str; //  codeword string
-      
-      ///
-   //   cout << "data_str : " << data_str << "\n";  
-      ///
-      
       code_str += crc_remainder(data_str);
-
-      ///
-  //    cout << "code_str : " << code_str << "\n";
-      ///
-
       codewords += code_str;
     } 
   } while(true);
 
-  ///
-  ///cout << "전체 codewords : " << codewords << "\n";
-  ///cout << "전체 codewords 길이 : " << codewords.size() << "\n";
-  ///
   len_8 = codewords.size() + (8 - codewords.size() % 8);
 
   if(len_8 % 8 != 0) {
@@ -127,17 +88,7 @@ int main(int argc, char* argv[]) {
   }
   padding_size = len_8 - codewords.size();
 
-  ///
-//  printf("padding_size = %d, %c\n", padding_size, padding_size);
-  ///
-
   codewords = string(padding_size, '0') + codewords;
-  
-  ///
-//  cout << "최종 codewords : " << codewords << "\n";
-//  cout << "최종 codewords 길이 : " << codewords.size() << "\n";
-  ///
-
   write_output_file();
 
   fclose(fp_in);
@@ -181,10 +132,6 @@ string crc_remainder(string dataword) {
 }
 
 void write_output_file() {
-  ///
- /// cout << "In write_output_file func\n";
- /// cout << "codewords : " << codewords << "(" << codewords.size() <<")\n";
-///
   int n_bytes = codewords.size() / 8; 
   fprintf(fp_out, "%c", padding_size);
 
@@ -193,10 +140,6 @@ void write_output_file() {
 
     for(int j = 0; j < 8; j++)
       b[7 - j] = codewords[i * 8 + j] - '0';
-
-    ///
-    ///cout << "byte : " << b << "\n";
-    ///
     fprintf(fp_out, "%c", (char)b.to_ulong());
   }
 }

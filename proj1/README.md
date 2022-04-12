@@ -1,5 +1,4 @@
 # 1. How to compile
-
 g++ -g -o crc_encoder_20161663 crc_encoder_20161663.cpp && \
 g++ -g -o crc_decoder_20161663 crc_decoder_20161663.cpp
 

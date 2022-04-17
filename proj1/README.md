@@ -1,11 +1,11 @@
 # 1. How to compile
 ## 1-1. For debugging
-g++ -g -o crc_encoder_20161663 crc_encoder_20161663.cpp && \
-g++ -g -o crc_decoder_20161663 crc_decoder_20161663.cpp
+g++ -g -o crc_encoder_20161663 crc_encoder_20161663.cc && \
+g++ -g -o crc_decoder_20161663 crc_decoder_20161663.cc
 
 ## 1-2. For submit
-g++ -o crc_encoder_20161663 crc_encoder_20161663.cpp && \
-g++ -o crc_decoder_20161663 crc_decoder_20161663.cpp
+g++ -o crc_encoder_20161663 crc_encoder_20161663.cc && \
+g++ -o crc_decoder_20161663 crc_decoder_20161663.cc
 
 # 2. How to run
 ./crc_encoder_20161663 input_file output_file generator dataword_size && \

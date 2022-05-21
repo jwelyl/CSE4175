@@ -177,6 +177,18 @@ void bellman_ford(int start, vector<int>& s_dist, vector<int>& s_parents) {
         s_dist[vr] = s_dist[vf] + w;
         s_parents[vr] = vf;
       }
+      else if(s_dist[vf] + w == s_dist[vr]) {
+        int cur_parent = s_parents[vr];       //  현재 vr의 parent
+        int cur_next = find_next(start, vr);  //  현재 vr의 parent일 때 next
+        int new_next;                         //  vr의 parent를 vf로 바꾸었을 때 next
+
+        s_parents[vr] = vf;
+        new_next = find_next(start, vr);
+
+        if(new_next > cur_next) //  next가 작아질 경우에만 parent를 변경
+          s_parents[vr] = cur_parent;
+        
+      }
     }
   }
 

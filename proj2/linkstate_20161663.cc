@@ -191,7 +191,7 @@ void dijkstra(int start, vector<int>& s_dist, vector<int>& s_parents) {
     //  cnode의 인접노드 확인
     for(int i = 0; i < (int)graph[cnode].size(); i++) {
       int next = graph[cnode][i].first;
-      int new_dist; 
+      int new_dist;
       
       if(graph[cnode][i].second == NONE) continue;  //  연결 끊어진 경우 skip
       new_dist = cdist + graph[cnode][i].second;
@@ -200,6 +200,10 @@ void dijkstra(int start, vector<int>& s_dist, vector<int>& s_parents) {
         s_dist[next] = new_dist;
         pq.push(make_pair(-s_dist[next], -next));
         s_parents[next] = cnode;
+      }
+      else if(new_dist == s_dist[next]) {
+        if(s_parents[next] > cnode)
+          s_parents[next] = cnode;
       }
     }
   } 

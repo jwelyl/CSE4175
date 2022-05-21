@@ -16,8 +16,10 @@ g++ -Wall -o linkstate_20161663 linkstate_20161663.cc
 ./distvec_20161663 topology.txt messages.txt changes.txt
 
 # 3. How to test
+
+cp testcase/n/* . (n : 1 ~ 4)
 cmp output_ls.txt output_ls_ans.txt
 cmp output_dv.txt output_dv_ans.txt
 
 # 4. How to clean
-rm linkstate_20161663 distvec_20161663 output_ls.txt output_dv.txt
+rm linkstate_20161663 distvec_20161663 output_ls.txt output_dv.txt topology.txt messages.txt changes.txt

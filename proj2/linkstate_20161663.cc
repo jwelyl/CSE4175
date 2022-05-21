@@ -3,6 +3,8 @@
 #include <cstring>
 #include <string>
 #include <iostream>
+#include <algorithm>
+#include <fstream>
 #include <vector>
 #include <queue>
 #include <stack>
@@ -13,13 +15,8 @@
 
 using namespace std;
 
-//  input file pointers
-FILE* fp_t;  //  topologyfile pointer
-FILE* fp_m;  //  messagefile pointer
-FILE* fp_c;  //  changesfile pointer
-
-//  output file pointer
-FILE* fp_o;  //  output_ls.txt pointer
+ifstream fp_t, fp_m, fp_c;  //  input file stream
+ofstream fp_o;  //  output_file stream
 
 int n;  //  # of nodes
 vector<vector<pair<int, int> > > graph;
@@ -27,9 +24,111 @@ vector<vector<int> > dist;      //  거리 벡터(dist[i][j]는 i에서 출발�
 vector<vector<int> > parents;   //  parents[i][j]는 i번 node로부터 Shortest Path Tree를 그렸을 때 j번 node의 부모 
 vector<pair<pair<int, int>, string> > message_list; //  message 목록
 
+void err_exit(string err_msg);
+void print_graph(); 
+void change_cost(int from, int to, int cost); 
+void dijkstra(int start, vector<int>& s_dist, vector<int>& s_parents); 
+int find_next(int start, int dest); 
+string find_path(int start, int dest);
+void print_routing_tables();
+void simulate_message();
+
+int main(int argc, char* argv[]) {
+  if(argc != 4)
+    err_exit("usage: ./linkstate_20161663 topologyfile messagesfile changesfile\n");
+
+  fp_t.open(argv[1]);
+  fp_m.open(argv[2]);
+  fp_c.open(argv[3]);
+
+  if(fp_t.fail() || fp_m.fail() || fp_c.fail())
+    err_exit("Error: open input file.\n");
+
+  fp_o.open("output_ls.txt");
+  if(fp_o.fail())
+    err_exit("Error: open output file.\n");
+
+  //fscanf(fp_t, "%d", &n);
+  fp_t >> n;
+  graph.assign(n, vector<pair<int, int> >());
+  dist.assign(n, vector<int>(n, INF));
+  parents.assign(n, vector<int>(n, NONE));
+
+  //  read topology file
+  while(true) {
+    int from, to, cost;
+    //cout << "reading topology file\n";
+    //if(fscanf(fp_t, "%d %d %d", &from, &to, &cost) == EOF) break;
+    fp_t >> from >> to >> cost;
+    
+    if(fp_t.eof()) break;
+    graph[from].push_back(make_pair(to, cost));
+    graph[to].push_back(make_pair(from, cost));
+  }
+
+  for(int i = 0; i < n; i++)
+    sort(graph[i].begin(), graph[i].end());
+  // print_graph();
+
+  //  read message file
+  while(true) {
+    string input;
+    int node[2], pos = 0;
+    string message;
+  
+    getline(fp_m, input);
+    
+    //cout << input << "\n";
+    if(fp_m.eof()) break;
+
+    for(int i = 0; i < 2; i++) {
+      int start = pos;
+      for(; pos < (int)input.size(); pos++) {
+        if(input[pos] == ' ') {
+          node[i] = stoi(input.substr(start, pos - start));
+          pos = pos + 1;
+          break;
+        }
+      }
+    }
+    message = input.substr(pos);
+    //cout << node[0] << " " << node[1] << " " <<  message << "\n";
+    message_list.push_back(make_pair(make_pair(node[0], node[1]), message));
+  }
+
+  //  step 0
+  for(int i = 0; i < n; i++)
+    dijkstra(i, dist[i], parents[i]);
+
+  print_routing_tables();
+  simulate_message();
+
+  //  read changes file
+  //  step 1 ~
+  while(true) {
+    int from, to, cost;
+
+    fp_c >> from >> to >> cost;
+    if(fp_c.eof()) break;
+
+    change_cost(from, to, cost);
+    //print_graph();
+    //cout << "\n";
+
+    for(int i = 0; i < n; i++)
+      dijkstra(i, dist[i], parents[i]);
+    
+    print_routing_tables();
+    simulate_message();
+  }
+
+  return 0;
+}
+
 //  err_msg 출력 후 비정상 종료
-void err_exit(const char* err_msg) {
-  fprintf(stderr, "%s", err_msg);
+void err_exit(string err_msg) {
+  //fprintf(stderr, "%s", err_msg);
+  cout << err_msg;
   exit(-1);
 }
 
@@ -48,36 +147,30 @@ void print_graph() {
 
 //  from node와 to node의 연결 상태 변화
 void change_cost(int from, int to, int cost) {
-  bool conn1 = false; //  from->to 존재
-  bool conn2 = false; //  to->from 존재
+  bool conn1 = false, conn2 = false;
 
-  //  이미 from과 to가 연결되었나 확인
-  for(int i = 0; i < n; i++) {
-    if(i == from) {
-      for(int j = 0; j < (int)graph[i].size(); j++) {
-        if(graph[i][j].first == to) {
-          graph[i][j].second = cost;
-          conn1 = true;
-        }
-      }
+  for(int i = 0; i < (int)graph[from].size(); i++) {
+    if(graph[from][i].first == to) {
+      graph[from][i].second = cost;
+      conn1 = true;
     }
-    else if(i == to) {
-      for(int j = 0; j < (int)graph[i].size(); j++) {
-        if(graph[i][j].first == from) {
-          graph[i][j].first = cost;
-          conn2 = true; 
-        }
-      }
-    } 
+  }
+  for(int i = 0; i < (int)graph[to].size(); i++) {
+    if(graph[to][i].first == from) {
+      graph[to][i].second = cost;
+      conn2 = true;
+    }
   }
 
-  if(conn1 != conn2)  //  양방향 그래프가 아닐 경우
-    err_exit("Something was wrong in graph\n");
-  else if(conn1 && conn2) return;  //  이미 연결된 두 node의 상태만 변경
-  
-  //  기존에 연결되지 않았을 경우, 새로운 연결 추가
-  graph[from].push_back(make_pair(to, cost));
-  graph[to].push_back(make_pair(from, cost));
+  if(conn1 != conn2)
+    err_exit("Graph Error!\n");
+  else if(!conn1) { //  graph에 edge 새로 삽입
+    graph[from].push_back(make_pair(to, cost));
+    graph[to].push_back(make_pair(from, cost));
+    sort(graph[from].begin(), graph[from].end());
+    sort(graph[to].begin(), graph[to].end());
+  }
+  else return;
 }
 
 //  start node부터 다른 node까지의 거리 계산
@@ -118,6 +211,7 @@ void dijkstra(int start, vector<int>& s_dist, vector<int>& s_parents) {
   } 
 }
 
+//  start에서 dest로 이동할 때 다음 node를 반환
 int find_next(int start, int dest) {
   int cur = dest;
 
@@ -129,6 +223,7 @@ int find_next(int start, int dest) {
   return cur;
 }
 
+//  start에서 dest로의 경로 출력(dest는 제외)
 string find_path(int start, int dest) {
   stack<int> st;
   string path = "";
@@ -149,93 +244,33 @@ string find_path(int start, int dest) {
   return path;
 }
 
-int main(int argc, char* argv[]) {
-  if(argc != 4)
-    err_exit("usage: ./linkstate_20161663 topologyfile messagefile changefile\n");
-
-  fp_t = fopen(argv[1], "r");
-  fp_m = fopen(argv[2], "r");
-  fp_c = fopen(argv[3], "r");
-
-  if(!fp_t || !fp_m || !fp_c)
-    err_exit("Error: open input file.\n");
-
-  fp_o = fopen("output_ls.txt", "w");
-  if(!fp_o)
-    err_exit("Error: open output file.\n");
-
-  fscanf(fp_t, "%d", &n);
-  graph.assign(n, vector<pair<int, int> >());
-  dist.assign(n, vector<int>(n, INF));
-  parents.assign(n, vector<int>(n, NONE));
-
-  //  read topology file
-  while(true) {
-    int from, to, cost;
-    
-    if(fscanf(fp_t, "%d %d %d", &from, &to, &cost) == EOF) break;
-    graph[from].push_back(make_pair(to, cost));
-    graph[to].push_back(make_pair(from, cost));
-  }
-  //print_graph();
-  
-  //  read message file
-  while(true) {
-    char input[1024];
-    string s, message;
-    int node[2];
-    int pos = 0;
-
-    if(!fgets(input, 1024, fp_m)) break;
-    s = input;
-    //cout << input;
-
-    for(int i = 0; i < 2; i++) {
-      int start = pos;
-      for(; pos < (int)s.size(); pos++) {
-        if(s[pos] == ' ') {
-          node[i] = stoi(s.substr(start, pos - start));
-          pos = pos + 1;
-          break;
-        }
-      }
-    }
-    message = s.substr(pos);
-    message_list.push_back(make_pair(make_pair(node[0], node[1]), message));
-    //  cout << node[0] << " " << node[1] << " " << message;
-  }
-
-  //  step 0
-  for(int i = 0; i < n; i++)
-    dijkstra(i, dist[i], parents[i]);
-
+//  routing table 출력
+void print_routing_tables() {
   for(int i = 0; i < n; i++) {
     for(int j = 0; j < n; j++) {
       int next = find_next(i, j);
-      cout << j << " " << next << " " << dist[i][j] << "\n";
+      if(next != NONE)
+        fp_o << j << " " << next << " " << dist[i][j] << "\n";
     }
-    cout << "\n";
-   // cout << "parents in SPT " << i << "\n";
-   // for(int j = 0; j < n; j++)
-   //   cout << parents[i][j] << " ";
-   // cout << "\n\n";
+    fp_o << "\n";
   }
+}
 
-  for(int i = 0; i < (int)message_list.size(); i++) {
+//  message를 simulation함
+void simulate_message() {
+   for(int i = 0; i < (int)message_list.size(); i++) {
     int start = message_list[i].first.first;
     int dest = message_list[i].first.second;
     int cost = dist[start][dest];
     string message = message_list[i].second;
     string path;
 
-    if(cost == INF) 
-      cout << "from " << start << " to " << dest << " cost infinite hops unreachable message " << message;
+    if(cost == INF) //  두 node 사이의 경로가 없을 경우 
+      fp_o << "from " << start << " to " << dest << " cost infinite hops unreachable message " << message << "\n";
     else {
       path = find_path(start, dest);
-      cout << "from " << start << " to " << dest << " cost " << cost << " hops " << path << "message " << message;
+      fp_o << "from " << start << " to " << dest << " cost " << cost << " hops " << path << "message " << message << "\n";
     }
   }
-
-
-  return 0;
+  fp_o << "\n";
 }

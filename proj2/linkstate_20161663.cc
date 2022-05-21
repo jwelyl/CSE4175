@@ -1,6 +1,4 @@
-#include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <string>
 #include <iostream>
 #include <algorithm>
@@ -48,7 +46,6 @@ int main(int argc, char* argv[]) {
   if(fp_o.fail())
     err_exit("Error: open output file.\n");
 
-  //fscanf(fp_t, "%d", &n);
   fp_t >> n;
   graph.assign(n, vector<pair<int, int> >());
   dist.assign(n, vector<int>(n, INF));
@@ -57,8 +54,6 @@ int main(int argc, char* argv[]) {
   //  read topology file
   while(true) {
     int from, to, cost;
-    //cout << "reading topology file\n";
-    //if(fscanf(fp_t, "%d %d %d", &from, &to, &cost) == EOF) break;
     fp_t >> from >> to >> cost;
     
     if(fp_t.eof()) break;
@@ -127,7 +122,6 @@ int main(int argc, char* argv[]) {
 
 //  err_msg 출력 후 비정상 종료
 void err_exit(string err_msg) {
-  //fprintf(stderr, "%s", err_msg);
   cout << err_msg;
   exit(-1);
 }
@@ -184,11 +178,11 @@ void dijkstra(int start, vector<int>& s_dist, vector<int>& s_parents) {
   s_dist[start] = 0;
   s_parents[start] = start;
 
-  pq.push(make_pair(-s_dist[start], start));
+  pq.push(make_pair(-s_dist[start], -start));
 
   while(!pq.empty()) {
-    int cdist = -pq.top().first;  //  현재 노드까지의 알려진 최소거리
-    int cnode = pq.top().second;  //  현재 노드
+    int cdist = -pq.top().first;   //  현재 노드까지의 알려진 최소거리
+    int cnode = -pq.top().second;  //  현재 노드
     pq.pop();
 
     //  거리가 더 짧아질 수 없을 경우
@@ -204,7 +198,7 @@ void dijkstra(int start, vector<int>& s_dist, vector<int>& s_parents) {
 
       if(new_dist < s_dist[next]) {
         s_dist[next] = new_dist;
-        pq.push(make_pair(-s_dist[next], next));
+        pq.push(make_pair(-s_dist[next], -next));
         s_parents[next] = cnode;
       }
     }

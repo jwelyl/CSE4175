@@ -22,4 +22,4 @@ cmp output_ls.txt output_ls_ans.txt
 cmp output_dv.txt output_dv_ans.txt
 
 # 4. How to clean
-rm linkstate_20161663 distvec_20161663 output_ls.txt output_dv.txt topology.txt messages.txt changes.txt
+rm linkstate_20161663 distvec_20161663 output_ls.txt output_dv.txt topology.txt messages.txt changes.txt output_dv_ans.txt output_ls_ans.txt

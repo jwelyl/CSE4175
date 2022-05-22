@@ -17,7 +17,7 @@ g++ -Wall -o linkstate_20161663 linkstate_20161663.cc
 
 # 3. How to test
 
-cp testcase/n/* . (n : 1 ~ 4)
+cp testcase/n/* . (n : 1 ~ 6)
 cmp output_ls.txt output_ls_ans.txt
 cmp output_dv.txt output_dv_ans.txt
 

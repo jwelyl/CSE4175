@@ -1,7 +1,6 @@
 #include <cstdlib>
 #include <string>
 #include <iostream>
-#include <algorithm>
 #include <fstream>
 #include <vector>
 #include <queue>
@@ -60,9 +59,6 @@ int main(int argc, char* argv[]) {
     graph[from].push_back(make_pair(to, cost));
     graph[to].push_back(make_pair(from, cost));
   }
-
-  for(int i = 0; i < n; i++)
-    sort(graph[i].begin(), graph[i].end());
   // print_graph();
 
   //  read message file
@@ -161,8 +157,6 @@ void change_cost(int from, int to, int cost) {
   else if(!conn1) { //  graph에 edge 새로 삽입
     graph[from].push_back(make_pair(to, cost));
     graph[to].push_back(make_pair(from, cost));
-    sort(graph[from].begin(), graph[from].end());
-    sort(graph[to].begin(), graph[to].end());
   }
   else return;
 }
